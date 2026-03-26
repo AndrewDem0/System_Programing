@@ -1,6 +1,3 @@
-using System;
-using System.Threading;
-
 namespace Task3
 {
     class MyThread
@@ -8,7 +5,6 @@ namespace Task3
         public long Count = 0;
         public Thread Thrd;
         public static bool Stop = false;
-        // Зберігаємо копію пріоритету, щоб прочитати її після смерті потоку
         public ThreadPriority SavedPriority; 
 
         public MyThread(string name)
@@ -41,7 +37,6 @@ namespace Task3
             MyThread mt4 = new MyThread("Normal_Thr");
             MyThread mt5 = new MyThread("BelowNorm_Thr");
 
-            // Встановлюємо пріоритет і ЗБЕРІГАЄМО його в нашому класі
             mt1.Thrd.Priority = mt1.SavedPriority = ThreadPriority.Highest;
             mt2.Thrd.Priority = mt2.SavedPriority = ThreadPriority.Lowest;
             mt3.Thrd.Priority = mt3.SavedPriority = ThreadPriority.AboveNormal;
@@ -63,7 +58,6 @@ namespace Task3
             Console.WriteLine("CPU TIME DISTRIBUTION:");
             Console.WriteLine("----------------------------------------");
             
-            // Тепер передаємо SavedPriority замість звернення до Thrd.Priority
             PrintStats(mt1, total);
             PrintStats(mt3, total);
             PrintStats(mt4, total);
@@ -76,7 +70,6 @@ namespace Task3
         static void PrintStats(MyThread mt, long total)
         {
             double pc = (double)mt.Count / total * 100;
-            // Використовуємо збережене значення пріоритету
             Console.WriteLine($"{mt.Thrd.Name,-15} ({mt.SavedPriority,-12}): {pc:F2}%");
         }
     }
