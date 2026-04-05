@@ -1,0 +1,17 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DynamicTypeIdentification.MainWindow"
+        Title="Lab 5: Reflection (Варіант 6)" Width="650" Height="450"
+        WindowStartupLocation="CenterScreen">
+    
+    <Grid RowDefinitions="Auto, *">
+        <StackPanel Grid.Row="0" Margin="10" Spacing="10">
+            <TextBlock Text="Динамічна ідентифікація типів (System.Reflection)" FontWeight="Bold" FontSize="16"/>
+            <Button Name="BtnReflect" Content="Дослідити об'єкт класу Лікар" Click="BtnReflect_Click" Width="300" HorizontalContentAlignment="Center"/>
+        </StackPanel>
+        
+        <Border Grid.Row="1" Margin="10" BorderBrush="Gray" BorderThickness="1">
+            <TreeView Name="PropertiesTreeView" />
+        </Border>
+    </Grid>
+</Window>
