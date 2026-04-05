@@ -1,0 +1,28 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:Lab6FileManager"
+        x:Class="Lab6FileManager.MainWindow"
+        Title="Avalonia File Manager (Lab 6)" Width="800" Height="600"
+        WindowStartupLocation="CenterScreen">
+    
+    <Grid RowDefinitions="Auto, *">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto" Margin="5">
+            <Button Grid.Column="0" Name="BtnUp" Content="Вгору (..)" Click="BtnUp_Click" Margin="0,0,5,0" Width="90" HorizontalContentAlignment="Center"/>
+            <TextBox Grid.Column="1" Name="TxtPath" KeyUp="TxtPath_KeyUp" Watermark="Введіть абсолютний шлях..."/>
+            <Button Grid.Column="2" Name="BtnGo" Content="Перейти" Click="BtnGo_Click" Margin="5,0,0,0" Width="90" HorizontalContentAlignment="Center"/>
+        </Grid>
+        
+        <ListBox Grid.Row="1" Name="LstFiles" DoubleTapped="LstFiles_DoubleTapped" Margin="5">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="local:FileSystemItem">
+                    <Grid ColumnDefinitions="30, 4*, 1*, 2*">
+                        <TextBlock Grid.Column="0" Text="{Binding Icon}" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="2" Text="{Binding SizeText}" VerticalAlignment="Center" Foreground="Gray"/>
+                        <TextBlock Grid.Column="3" Text="{Binding ModifiedDate}" VerticalAlignment="Center" Foreground="Gray"/>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</Window>
