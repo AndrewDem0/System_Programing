@@ -1,0 +1,24 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Lab4Avalonia.MainWindow"
+        Title="Lab 4: Async Model" Width="500" Height="300"
+        WindowStartupLocation="CenterScreen">
+    
+    <StackPanel Margin="20" Spacing="15">
+        <TextBlock Text="Task Parallel Library: Avalonia UI" FontSize="18" FontWeight="Bold"/>
+        
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button Name="BtnStart" Content="Почати обчислення" Click="BtnStart_Click" Width="180" HorizontalContentAlignment="Center"/>
+            <Button Name="BtnCancel" Content="Скасувати операцію" Click="BtnCancel_Click" IsEnabled="False" Width="180" HorizontalContentAlignment="Center"/>
+        </StackPanel>
+        
+        <TextBlock Name="TxtStatus" Text="Стан: Очікування ініціалізації..." />
+        
+        <ProgressBar Name="PbTaskProgress" Minimum="0" Maximum="100" Value="0" Height="25"/>
+        <TextBlock Name="TxtProgressPercent" Text="0%" HorizontalAlignment="Center" Margin="0,-22,0,0" FontWeight="Bold"/>
+        
+        <TextBlock Name="TxtResult" Text="Результат: N/A" FontWeight="Bold" Margin="0,15,0,0"/>
+        
+        <TextBox Watermark="Тестове поле вводу (перевірка розблокованого UI-потоку)..." Margin="0,10,0,0" />
+    </StackPanel>
+</Window>
