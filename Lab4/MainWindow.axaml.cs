@@ -74,9 +74,6 @@ namespace Lab4Avalonia
             }
         }
 
-        /// <summary>
-        /// Інкапсулює ресурсомістку задачу, делегуючи її пулу потоків.
-        /// </summary>
         private Task<int> ProcessLongTaskAsync(int totalSteps, IProgress<int> progress, CancellationToken token)
         {
             return Task.Run(() =>
