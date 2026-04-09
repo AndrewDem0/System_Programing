@@ -3,11 +3,13 @@ using Avalonia.Interactivity;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 
 namespace DynamicTypeIdentification
 {
+    // Цільовий клас для інспектування
     public class Doctor
     {
         public string FullName { get; set; }
@@ -47,6 +49,89 @@ namespace DynamicTypeIdentification
         }
     }
 
+    // Модель даних для MVVM-прив'язки
+    public class ReflectionNode
+    {
+        public string Header { get; set; }
+        public ObservableCollection<ReflectionNode> Children { get; set; }
+
+        public ReflectionNode(string header)
+        {
+            Header = header;
+            Children = new ObservableCollection<ReflectionNode>();
+        }
+    }
+
+    // Ізольований сервіс для аналізу метаданих
+    public class TypeInspectorService
+    {
+        public ObservableCollection<ReflectionNode> Inspect(object targetObject)
+        {
+            var rootNodes = new ObservableCollection<ReflectionNode>();
+            if (targetObject == null) return rootNodes;
+
+            Type targetType = targetObject.GetType();
+
+            // 1. Аналіз конструкторів
+            var ctorsRoot = new ReflectionNode("[ КОНСТРУКТОРИ ]");
+            ConstructorInfo[] constructors = targetType.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+            foreach (ConstructorInfo ctor in constructors)
+            {
+                string paramSignature = string.Join(", ", ctor.GetParameters().Select(p => $"{p.ParameterType.Name} {p.Name}"));
+                ctorsRoot.Children.Add(new ReflectionNode($"ctor {targetType.Name}({paramSignature})"));
+            }
+            rootNodes.Add(ctorsRoot);
+
+            // 2. Аналіз властивостей та поточного стану
+            var propsRoot = new ReflectionNode("[ ВЛАСТИВОСТІ ТА СТАН ОБ'ЄКТА ]");
+            PropertyInfo[] properties = targetType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            foreach (PropertyInfo prop in properties)
+            {
+                object value = null;
+                try
+                {
+                    value = prop.GetValue(targetObject);
+                }
+                catch (TargetParameterCountException) 
+                {
+                    value = "{Потребує індексу}";
+                }
+
+                string headerData = $"[Властивість] {prop.PropertyType.Name} {prop.Name} = ";
+                ReflectionNode node = new ReflectionNode(headerData);
+
+                if (value is IEnumerable collection && value is not string)
+                {
+                    node.Header = headerData + "{Колекція}";
+                    foreach (object element in collection)
+                    {
+                        node.Children.Add(new ReflectionNode(element?.ToString() ?? "null"));
+                    }
+                }
+                else
+                {
+                    node.Header = headerData + (value?.ToString() ?? "null");
+                }
+                propsRoot.Children.Add(node);
+            }
+            rootNodes.Add(propsRoot);
+
+            // 3. Аналіз методів
+            var methodsRoot = new ReflectionNode("[ МЕТОДИ ]");
+            MethodInfo[] methods = targetType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+            foreach (MethodInfo method in methods)
+            {
+                if (method.IsSpecialName) continue;
+
+                string paramSignature = string.Join(", ", method.GetParameters().Select(p => $"{p.ParameterType.Name} {p.Name}"));
+                methodsRoot.Children.Add(new ReflectionNode($"[Метод] {method.ReturnType.Name} {method.Name}({paramSignature})"));
+            }
+            rootNodes.Add(methodsRoot);
+
+            return rootNodes;
+        }
+    }
+
     public partial class MainWindow : Window
     {
         public MainWindow()
@@ -56,75 +141,20 @@ namespace DynamicTypeIdentification
 
         private void BtnReflect_Click(object sender, RoutedEventArgs e)
         {
-            Doctor targetDoctor = new Doctor(
+            // Ініціалізація екземпляра як System.Object для підтвердження пізнього зв'язування
+            object unknownTarget = new Doctor(
                 "Грегорі Хаус", 
                 25, 
                 true, 
                 new List<string> { "Інфекціоніст", "Нефролог", "Діагност" }
             );
 
-            Type targetType = targetDoctor.GetType();
-            List<TreeViewItem> globalRootNodes = new List<TreeViewItem>();
+            // Виклик сервісу інтроспекції
+            var inspector = new TypeInspectorService();
+            ObservableCollection<ReflectionNode> inspectionData = inspector.Inspect(unknownTarget);
 
-            TreeViewItem ctorsRoot = new TreeViewItem { Header = "[ КОНСТРУКТОРИ ]", IsExpanded = true };
-            List<TreeViewItem> ctorsList = new List<TreeViewItem>();
-            
-            ConstructorInfo[] constructors = targetType.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
-            foreach (ConstructorInfo ctor in constructors)
-            {
-                // Форматування списку параметрів за допомогою LINQ
-                string paramSignature = string.Join(", ", ctor.GetParameters().Select(p => $"{p.ParameterType.Name} {p.Name}"));
-                ctorsList.Add(new TreeViewItem { Header = $"ctor Doctor({paramSignature})" });
-            }
-            ctorsRoot.ItemsSource = ctorsList;
-            globalRootNodes.Add(ctorsRoot);
-
-            TreeViewItem propsRoot = new TreeViewItem { Header = "[ ВЛАСТИВОСТІ ТА СТАН ОБ'ЄКТА ]", IsExpanded = true };
-            List<TreeViewItem> propsList = new List<TreeViewItem>();
-
-            PropertyInfo[] properties = targetType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            foreach (PropertyInfo prop in properties)
-            {
-                object value = prop.GetValue(targetDoctor);
-                string headerData = $"[Властивість] {prop.PropertyType.Name} {prop.Name} = ";
-                TreeViewItem node = new TreeViewItem();
-
-                if (value is IEnumerable collection && value is not string)
-                {
-                    node.Header = headerData + "{Колекція}";
-                    List<TreeViewItem> childNodes = new List<TreeViewItem>();
-                    foreach (object element in collection)
-                    {
-                        childNodes.Add(new TreeViewItem { Header = element.ToString() });
-                    }
-                    node.ItemsSource = childNodes;
-                }
-                else
-                {
-                    node.Header = headerData + (value?.ToString() ?? "null");
-                }
-                propsList.Add(node);
-            }
-            propsRoot.ItemsSource = propsList;
-            globalRootNodes.Add(propsRoot);
-
-            TreeViewItem methodsRoot = new TreeViewItem { Header = "[ МЕТОДИ ]", IsExpanded = true };
-            List<TreeViewItem> methodsList = new List<TreeViewItem>();
-
-            // BindingFlags.DeclaredOnly ігнорує методи класу Object
-            MethodInfo[] methods = targetType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-            foreach (MethodInfo method in methods)
-            {
-                // Відсікання методів get_ та set_ , які генеруються для властивостей
-                if (method.IsSpecialName) continue;
-
-                string paramSignature = string.Join(", ", method.GetParameters().Select(p => $"{p.ParameterType.Name} {p.Name}"));
-                methodsList.Add(new TreeViewItem { Header = $"[Метод] {method.ReturnType.Name} {method.Name}({paramSignature})" });
-            }
-            methodsRoot.ItemsSource = methodsList;
-            globalRootNodes.Add(methodsRoot);
-
-            PropertiesTreeView.ItemsSource = globalRootNodes;
+            // Прив'язка даних до інтерфейсу
+            PropertiesTreeView.ItemsSource = inspectionData;
             BtnReflect.IsEnabled = false;
         }
     }
